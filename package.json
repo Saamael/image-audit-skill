@@ -30,7 +30,7 @@
     "LICENSE"
   ],
   "bin": {
-    "image-audit-skill": "./bin/image-audit-skill.js"
+    "image-audit-skill": "bin/image-audit-skill.js"
   },
   "engines": {
     "node": ">=18"

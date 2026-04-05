@@ -1,0 +1,38 @@
+{
+  "name": "image-audit-skill",
+  "version": "0.1.0",
+  "description": "Installer for the Image Audit skill for Claude Code and Codex.",
+  "license": "Apache-2.0",
+  "author": "Igor Gridel",
+  "homepage": "https://github.com/Saamael/image-audit-skill",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Saamael/image-audit-skill.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Saamael/image-audit-skill/issues"
+  },
+  "keywords": [
+    "claude-code",
+    "codex",
+    "skills",
+    "image-optimization",
+    "webp",
+    "supabase",
+    "performance"
+  ],
+  "files": [
+    ".claude/skills/image-audit",
+    "bin",
+    "install.sh",
+    "install.ps1",
+    "README.md",
+    "LICENSE"
+  ],
+  "bin": {
+    "image-audit-skill": "./bin/image-audit-skill.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

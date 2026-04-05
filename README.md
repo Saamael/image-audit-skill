@@ -1,40 +1,44 @@
 # Image Audit
 
-Audit-first image cleanup for Claude Code and Codex.
+Safely optimize images in your repo.
 
 Repo: https://github.com/Saamael/image-audit-skill
 
-This is built for a boring but common problem:
+## Recommended install
 
-- solo founders upload PNGs by default
-- sites accumulate oversized assets
-- nobody knows which files are safe WebP wins and which ones need manual review
+Claude Code:
 
-The skill is audit-first.
-It scans first, plans second, and only applies safe local conversions when asked.
+```bash
+npx image-audit-skill install --claude
+```
+
+Then inside a repo, run:
+
+```bash
+/imageaudit
+```
+
+That is the main happy path.
 
 ## What it does
 
-- audits local image assets and code references
-- flags duplicate files by hash
-- highlights likely hero and LCP assets
-- classifies PNG and JPG files into safe conversions vs manual review
-- generates JSON and Markdown reports
-- builds a local migration plan
-- converts safe local files to WebP while keeping originals
-- audits Supabase Storage buckets for remote migration candidates
+- audits local image assets and image references
+- builds a safe plan
+- applies safe local conversions when possible
+- leaves risky files for manual review
+- can audit Supabase Storage too
 
-## What it does not do yet
+## What it does not do
 
-- rewrite every code reference automatically
-- migrate Supabase objects in place
-- decide every PNG should become lossy WebP
+- blindly convert every PNG
+- delete originals
+- pretend screenshots, logos, and alpha-heavy assets all want the same treatment
 
 ## Requirements
 
 - Python 3.10+
 - Pillow
-- Node 18+ if you want the `npx` installer
+- Node 18+
 
 Install Pillow if needed:
 
@@ -42,105 +46,60 @@ Install Pillow if needed:
 pip install Pillow
 ```
 
-## Recommended install
+## Other install options
 
-If you publish this repo to npm, the cleanest install flow is:
-
-Claude Code global:
-
-```bash
-npx image-audit-skill install --claude
-```
-
-Claude Code project-local:
+Claude Code, current project only:
 
 ```bash
 npx image-audit-skill install --claude --project .
 ```
 
-Codex global:
+Codex:
 
 ```bash
 npx image-audit-skill install --codex
 ```
 
-Codex project-local:
+Codex, current project only:
 
 ```bash
 npx image-audit-skill install --codex --project .
 ```
 
-This is nicer than raw copy commands because the package just drops the skill into the right folder.
-
-## Repo and package
-
-- GitHub repo: `Saamael/image-audit-skill`
-- npm package: `image-audit-skill`
-- Skill folder: `image-audit`
-
-## Install globally
-
-Quickest option:
-
-macOS or Linux:
-
-```bash
-./install.sh
-```
-
-Windows PowerShell:
-
-```powershell
-.\install.ps1
-```
-
-Manual install:
-
-macOS or Linux:
-
-```bash
-mkdir -p ~/.claude/skills
-cp -R ./.claude/skills/image-audit ~/.claude/skills/
-```
-
-Windows PowerShell:
-
-```powershell
-New-Item -ItemType Directory -Force "$HOME\\.claude\\skills" | Out-Null
-Copy-Item -Recurse ".\\.claude\\skills\\image-audit" "$HOME\\.claude\\skills\\"
-```
-
-## Install per project
-
-macOS or Linux:
-
-```bash
-./install.sh /path/to/target-project/.claude/skills
-```
-
-Windows PowerShell:
-
-```powershell
-.\install.ps1 "C:\path\to\target-project\.claude\skills"
-```
-
-## Install scripts
-
-The helper script lives inside the skill folder.
-Once installed, Claude Code can find it in one of these locations:
-
-- `./.claude/skills/image-audit/scripts/image_audit.py`
-- `~/.claude/skills/image-audit/scripts/image_audit.py`
-
 ## Usage
 
-After install, ask Claude Code things like:
+In Claude Code:
+
+```bash
+/imageaudit
+```
+
+You can also pass extra instructions:
+
+```bash
+/imageaudit audit only
+```
+
+```bash
+/imageaudit src
+```
+
+```bash
+/imageaudit check supabase bucket blog-images too
+```
+
+Without the command, you can still ask:
 
 - `Audit this repo for image bloat and tell me what is safe to convert.`
 - `Plan a PNG to WebP migration for this project without breaking refs.`
-- `Audit these Supabase buckets for oversized images: blog-images, blog-covers.`
 
 ## Direct script usage
+
+The helper script lives in:
+
+```bash
+./.claude/skills/image-audit/scripts/image_audit.py
+```
 
 Local audit:
 
@@ -163,53 +122,24 @@ python ./.claude/skills/image-audit/scripts/image_audit.py apply --plan reports/
 Supabase bucket audit:
 
 ```bash
-SUPABASE_URL="https://your-project.supabase.co" \
-SUPABASE_SERVICE_ROLE_KEY="your-service-role-key" \
-python ./.claude/skills/image-audit/scripts/image_audit.py supabase-audit \
-  --bucket blog-images \
-  --bucket blog-covers \
-  --json-output reports/supabase-audit.json \
-  --markdown-output reports/supabase-audit.md
+python ./.claude/skills/image-audit/scripts/image_audit.py supabase-audit --bucket blog-images --json-output reports/supabase-audit.json --markdown-output reports/supabase-audit.md
 ```
 
-## Sharing
+## Summary
 
-The simplest first release is a GitHub repo with this exact folder structure.
-
-Then the install story is:
-
-1. Push the repo to GitHub: `https://github.com/Saamael/image-audit-skill`
-2. Publish the npm package: `image-audit-skill`
-3. Tell Claude Code users to run `npx image-audit-skill install --claude`.
-4. Tell Codex users to run `npx image-audit-skill install --codex`.
-
-## GitHub fallback
-
-macOS or Linux:
+- Install:
 
 ```bash
-git clone https://github.com/Saamael/image-audit-skill.git
-cd image-audit-skill
-./install.sh
+npx image-audit-skill install --claude
 ```
 
-Windows PowerShell:
-
-```powershell
-git clone https://github.com/Saamael/image-audit-skill.git
-cd image-audit-skill
-.\install.ps1
-```
-
-## Publish
-
-GitHub:
+- Run:
 
 ```bash
-git add .
-git commit -m "Prepare first public release"
-git push origin main
+/imageaudit
 ```
+
+- It will do as much safe optimization as it can.
 
 npm:
 

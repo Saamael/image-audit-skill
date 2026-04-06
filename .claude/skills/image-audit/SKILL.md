@@ -1,5 +1,5 @@
 ---
-description: Audit a repo or Supabase bucket for oversized or wrong-format images, then build a safe WebP migration plan. Use when someone wants to find PNG and JPG bloat, duplicate assets, lazy-loading issues, or storage cleanup work.
+description: Audit repo or storage images for wasteful formats, oversized assets, duplicate binaries, and safe WebP conversion opportunities. Use when someone wants a safe image audit, low-risk repo optimizations, or a plan to replace bloated PNG and JPG assets without blindly converting everything.
 allowed-tools: Bash Read Grep Glob Edit Write
 ---
 
@@ -7,106 +7,104 @@ allowed-tools: Bash Read Grep Glob Edit Write
 
 Interpret `$ARGUMENTS` as one of these modes:
 
-- `audit <path>`
-- `plan <path>`
-- `apply <plan-file>`
+- `audit [path]`
+- `fix [path]`
 - `supabase-audit <bucket>[,<bucket>...]`
 
 If `$ARGUMENTS` is empty, default to `audit .`.
 
-## Find the helper script first
-
-Prefer the first existing path:
-
-- `./.claude/skills/image-audit/scripts/image_audit.py`
-- `~/.claude/skills/image-audit/scripts/image_audit.py`
-
-Use that script path in every command below.
-
 ## Rules
 
-1. Audit before mutate.
-2. Do not assume every PNG should become lossy WebP.
-3. Treat Supabase delivery transforms and storage migration as different jobs.
-4. Keep originals unless the user explicitly asks to delete them.
-5. End every run with safe changes, manual review items, and the next command to run.
+1. Default to read-only unless the user explicitly asks to fix or apply changes.
+2. Audit before mutate.
+3. Do not assume every PNG wants lossy WebP.
+4. Prefer SVG for logos, icons, and simple graphics when possible.
+5. Keep originals unless the user explicitly asks to delete or replace them.
+6. Only keep converted outputs when they are actually smaller and visually safe.
+7. Only update references when the replacement is exact and safe to verify.
+8. For Supabase, separate delivery transforms from real storage migration work.
 
-## Local repo workflow
+## Backend discovery
 
-### Audit
+Before converting anything, inspect the repo and machine for available tooling.
+Prefer this order:
 
-Run:
+1. repo-native tooling already present in the project, such as `sharp`
+2. `cwebp`
+3. `magick`
+4. `python` with Pillow available
+5. `ffmpeg`
 
-```bash
-python "<script-path>" audit --root "<path>" --json-output reports/image-audit.json --markdown-output reports/image-audit.md
-```
+If none exist, stop after the audit and explain which backend is missing.
+For Python, verify Pillow first instead of assuming it is installed.
 
-Then summarize:
+## Audit workflow
 
-- biggest files
-- duplicate assets
-- likely hero or LCP risks
-- safe WebP candidates
-- files that need manual review because they may want SVG or lossless handling
+1. Resolve the target path. If none is given, use the current repo root.
+2. Inventory image files and likely references. Prefer fast search tools such as `rg --files` and `rg -n` when available.
+3. Call out:
+   - biggest raster assets
+   - duplicate binaries
+   - likely hero or LCP images
+   - assets much larger than their likely display size
+   - direct PNG and JPG to WebP opportunities
+   - files that probably want SVG or lossless handling
+4. Group findings into:
+   - safe now
+   - manual review
+   - keep as-is
+5. Write a concise report to `reports/image-audit.md`.
+6. End with the next command to run.
 
-### Plan
+## Classification
 
-Run:
+Safe now:
 
-```bash
-python "<script-path>" plan --root "<path>" --json-output reports/image-plan.json --markdown-output reports/image-plan.md
-```
+- most JPG and JPEG files
+- large opaque PNG photos, covers, banners, hero images, and backgrounds
 
-Group the plan into:
+Manual review:
 
-- safe to convert now
-- manual review
-- keep as-is
+- logos, icons, favicons, badges, marks, and simple diagrams
+- screenshots, dashboards, UI captures, and code images
+- alpha-heavy PNG assets
+- animated GIFs
+- ambiguous or very small PNGs
 
-### Apply
+Keep as-is:
 
-Run:
+- SVG assets
+- files already on WebP or AVIF unless they are obviously oversized
 
-```bash
-python "<script-path>" apply --plan "<plan-file>"
-```
+## Fix workflow
 
-Important:
+When mode is `fix`:
 
-- this only converts safe local files
-- it keeps originals in place
-- it does not pretend code references are fixed unless you verify them
+1. Run the audit first and create or update `reports/image-audit.md`.
+2. Choose the best available backend.
+3. Convert only the safe-now set.
+4. Write converted files next to the originals as `.webp`.
+5. Compare source vs output size and discard outputs that are larger or only a negligible win.
+6. If references are explicit literal file paths and the replacement is one-to-one, update them.
+7. If references are dynamic, ambiguous, or framework-controlled, leave them alone and call them out.
+8. Write a concise mutation report to `reports/image-fix.md`.
 
 ## Supabase workflow
 
-If the user wants a storage audit, run:
+If the user asks for storage audit:
 
-```bash
-python "<script-path>" supabase-audit --bucket "<bucket>" --json-output reports/supabase-audit.json --markdown-output reports/supabase-audit.md
-```
+- inspect bucket objects and classify likely migration candidates
+- distinguish quick delivery wins from real object migration work
+- do not claim the bucket is cleaned up just because transformed URLs exist
 
-The script reads:
+## What to report
 
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
+Always mention:
 
-unless the user passes explicit flags.
-
-For Supabase, distinguish:
-
-- quick delivery wins
-- actual storage migration work
-
-Do not imply the bucket is cleaned up just because transformed delivery URLs exist.
-
-## What to call out
-
-Always mention if you find:
-
-- giant PNGs that should probably be WebP
-- JPGs that are easy WebP wins
-- screenshots, logos, or alpha-heavy assets that need manual review
-- duplicate binaries
-- large hero images
-- assets much larger than their likely display size
-- places where SVG or CSS would beat raster files
+- what was audited
+- which backend was detected
+- safe wins
+- manual review items
+- what was changed, if anything
+- estimated bytes saved
+- whether references were updated or left alone

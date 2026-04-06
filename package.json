@@ -1,7 +1,7 @@
 {
   "name": "image-audit-skill",
-  "version": "0.1.1",
-  "description": "Install the Image Audit skill for Claude Code and Codex.",
+  "version": "0.2.0",
+  "description": "Install the Image Audit skill and Claude Code command for safe repo image optimization.",
   "license": "Apache-2.0",
   "author": "Igor Gridel",
   "homepage": "https://github.com/Saamael/image-audit-skill",

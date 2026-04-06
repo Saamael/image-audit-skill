@@ -1,29 +1,34 @@
 ---
-description: Audit and safely optimize images in the current repo
-argument-hint: [optional path or extra instruction]
-allowed-tools: Bash(python:*), Read, Grep, Glob, Edit, Write
+description: Audit repo images and run safe fixes when explicitly asked
+argument-hint: [path | fix [path] | supabase <bucket>]
+allowed-tools: Bash, Read, Grep, Glob, Edit, Write
 ---
 
-Use the installed `image-audit` skill and do as much safe image optimization work as you can for the current repo.
+Use the installed `image-audit` skill.
 
-Default behavior:
+Interpret `$ARGUMENTS` like this:
 
-1. Treat `$ARGUMENTS` as an optional target path or extra instruction.
-2. If no path is given, use the current working directory.
-3. Find the helper script at one of:
-   - `./.claude/skills/image-audit/scripts/image_audit.py`
-   - `~/.claude/skills/image-audit/scripts/image_audit.py`
-4. Run a local audit and plan:
-   - `python "<script-path>" audit --root "<target-path>" --json-output reports/image-audit.json --markdown-output reports/image-audit.md`
-   - `python "<script-path>" plan --root "<target-path>" --json-output reports/image-plan.json --markdown-output reports/image-plan.md`
-5. Unless the user explicitly says `audit only`, `report only`, `plan only`, or `dry run`, apply the safe local conversions:
-   - `python "<script-path>" apply --plan reports/image-plan.json --json-output reports/image-apply.json --markdown-output reports/image-apply.md`
-6. Never delete originals.
-7. Summarize:
-   - what was audited
-   - what was safely converted
-   - approximate bytes saved
-   - what still needs manual review
-   - whether code refs may still need cleanup
+- empty -> `audit .`
+- `<path>` -> `audit <path>`
+- `fix` or `fix <path>` -> audit first, then apply safe local fixes
+- `supabase <bucket>[,<bucket>...]` -> audit Supabase storage only
 
-If `$ARGUMENTS` mentions Supabase or bucket names, also run a Supabase audit when the required env vars are present.
+Command contract:
+
+1. `/imageaudit` without `fix` is read-only.
+2. Always create or update `reports/image-audit.md`.
+3. In `fix` mode, also create `reports/image-fix.md`.
+4. Detect available local tooling and use the best installed backend.
+5. Keep originals.
+6. Only keep converted outputs if they are actually smaller.
+7. Only update references when the replacement is exact and safe.
+8. If no conversion backend exists, finish with the audit and explain what to install next.
+
+Default summary:
+
+- what was audited
+- which backend was detected
+- safe wins
+- manual review items
+- what was changed, if anything
+- next command to run

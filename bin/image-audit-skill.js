@@ -149,9 +149,11 @@ function install(flags) {
   console.log(`Installed image-audit to ${destination}`);
   if (product === "codex") {
     console.log("Restart Codex to pick up the new skill.");
+    console.log('Then ask Codex to use the "image-audit" skill on a repo.');
   } else {
     console.log("Restart Claude Code if it is already running.");
     console.log("Then run /imageaudit inside a repo.");
+    console.log("Use /imageaudit fix to apply safe conversions.");
   }
 }
 
